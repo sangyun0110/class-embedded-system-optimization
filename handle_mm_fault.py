@@ -8,11 +8,11 @@ bpf_text="""
 
 struct data_t {
     unsigned char *filename;
-    u32 count;
+    u64 count;
     int flag;
-}
+};
 
-BPF_HASH(counter, const unsigned char*);
+BPF_HASH(counter, const unsigned char*, u64);
 BPF_PERF_OUTPUT(events);
 
 int kprobe__handle_mm_fault(struct pt_regs *ctx,
@@ -20,14 +20,20 @@ int kprobe__handle_mm_fault(struct pt_regs *ctx,
                             unsigned long address,
                             unsigned int flags) {
     struct data_t data = {};
-
-    unsigne char* filename;
+    u64 *p;
+    if(!vma) {
+        return 0;
+    }
     if(!vma->vm_file) {
-        data.flag = 0;
+        return 0;
     }
     else {
         data.filename = vma->vm_file->f_path.dentry->d_name.name;
-        data.count = counter.lookup(&data.filename) + 1;
+        p = counter.lookup(&data.filename);
+        if(p == 0)
+            data.count = 1;
+        else
+            data.count = *p + 1;
         data.flag = 1;
         counter.update(&data.filename, &data.count);
     }
