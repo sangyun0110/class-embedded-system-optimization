@@ -104,8 +104,6 @@ def print_event(cpu, data, size):
         output[commandName] = {'READ': 0, 'WRITE': 0}
     output[commandName]['WRITE' if event.access_type else 'READ'] += 1
     output[commandName]['TYPE'] = fileType.get(event.file_type)
-    if output[commandName]['TYPE'] == None:
-        print(event.file_type)
 
 
 b['events'].open_perf_buffer(print_event)
@@ -118,5 +116,6 @@ while True:
         print("File Operation Result")
         print("%-20s %-20s %-20s %-20s" % ('COMMAND', 'TYPE', 'READ', 'WRITE'))
         for commandName, result in output.items():
-            print("%-20s %-20s %-20s %-20s" % (commandName, result['TYPE'], result['READ'], result['WRITE']))
+            if result['TYPE']:
+                print("%-20s %-20s %-20s %-20s" % (commandName, result['TYPE'], result['READ'], result['WRITE']))
         exit()
