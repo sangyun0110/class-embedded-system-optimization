@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from bcc import BPF
-from time import strftime
 
 # define BPF program
 # kernel memory read -> bpf_probe_read_kernel(void *dst, int size, const void *src)
@@ -44,7 +43,7 @@ int kretprobe__io_schedule(struct pt_regs *ctx) {
     if(tsp == 0) {
         return 0; // missed create
     }
-    data.delta = (data.ts - *tsp) / 1000000;
+    data.delta = (data.ts - *tsp);
     birth.delete(&data.pid);
     bpf_get_current_comm(&data.comm, sizeof(data.comm));
 
@@ -60,11 +59,12 @@ b = BPF(text=bpf_text)
 b.attach_kprobe(event="io_schedule", fn_name="kprobe__io_schedule")
 b.attach_kprobe(event="io_schedule", fn_name="kretprobe__io_schedule")
 
-print("%-16s %-6s %-8s %-16s" % ("TIME", "PID", "DELTA", "COMM"))
+print("%-16s %-16s %-16s %-16s" % ("TIME", "PID", "DELTA(ms)", "COMM"))
 
 def print_event(cpu, data, size):
     event = b["events"].event(data)
-    print("%-16s %-6s %-8s %-16s" % (event.ts, event.pid, event.delta, event.comm.decode('utf-8', 'replace')))
+    if event.delta:
+        print("%-16s %-16s %-16s %-16s" % (event.ts, event.pid, event.delta / 1000000, event.comm.decode('utf-8', 'replace')))
 
 b["events"].open_perf_buffer(print_event)
 while True:
