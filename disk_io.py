@@ -9,15 +9,10 @@ bpf_text="""
 
 struct data_t {
     char disk[DISK_NAME_LEN];
-    //char name[TASK_COMM_LEN];
     u64 total_data_len;
     u64 sector;
     u64 rwflag;
-    //u64 srflag;
-    //u64 prev;
 };
-//BPF_HASH(prev_sector, u64, u64);
-//BPF_HASH(prev_length, u64, u64);
 BPF_PERF_OUTPUT(events);
 
 int kprobe__blk_mq_start_request(struct pt_regs *ctx,
